@@ -1,0 +1,123 @@
+app.controller("main", ['$sce', '$scope', 'GetPost', 'GetWeights', 'SignIn', function ($sce, $scope, GetPost, GetWeights, SignIn) {
+  var s = $scope;
+  var total = 0;
+  s.date = '';
+  s.content = '';
+  s.day = 0;
+  s.user = '';
+  s.pass = '';
+
+  s.changeDay = function(add) {
+    s.day += add;
+    s.day = (s.day + total) % total;
+    initializer();
+  };
+
+  s.signin = function() {
+    var pop = $('#popup');
+    pop.toggleClass('hidden');
+    $('#overalls').toggleClass('hidden');
+    if (!pop.is('.hidden'))
+    {
+      $('#user').get(0).focus();
+    }
+  };
+
+  // private functions
+
+  function setBottom() {
+    var width = $(window).width();
+    var height = $(window).height();
+    var blog = $('#blog');
+    var offset = height - blog.offset().top - 50;
+    blog.css('height',offset + 'px');
+    var left = width - 20;
+    var top = height - 20;
+    var cc = $('#corner-click');
+    cc.css('height', 20);
+    cc.css('width', 20);
+    cc.css('top', top);
+    cc.css('left', left);
+    var popup = $('#popup');
+    popup.css('left', (width / 2) - (popup.width() / 2));
+    popup.css('top', (height / 2) - (popup.height() / 2));
+  }
+
+  function getPost() {
+    GetPost.get({date:s.day}, function(resp){
+      var p = resp.p;
+      total = resp.t;
+      s.date = p.date;
+      s.content = $sce.trustAsHtml(p.content);
+    });
+  }
+
+  function initializer() {
+    setBottom();
+    getPost();
+    weightChart();
+    setInputAction();
+    $('.noselect').attr('unselectable', 'on');
+    $(window).resize(function(){
+      setBottom();
+    });
+  }
+
+  function setInputAction() {
+    $('input').keypress(function(e){
+      if (e.charCode == 13)
+      {
+        if (s.user.length > 0 && s.pass.length > 0)
+          SignIn.get({user: s.user, pass: s.pass}, function(resp){
+            if (resp.success)
+            {
+              window.location.href = 'add';
+            }
+          });
+      }
+    });
+  }
+
+  function weightChart() {
+    GetWeights.get({day:s.day}, function(resp){
+      var weights = resp.weights;
+      draw(weights);
+    });
+  }
+
+  function draw(weights)
+  {
+    var max = weights.sort(function (a, b) {return parseFloat(b.size)-parseFloat(a.size)})[0];
+    var min = weights.sort(function (a, b) {return parseFloat(a.size)-parseFloat(b.size)})[0];
+    weights = weights.sort(function (a, b) {return a.day-b.day});
+    var w = $('#weight');
+    var height = parseFloat(max.size)-parseFloat(min.size);
+    w.attr('height', height + 1);
+    var length = weights[weights.length - 1].day;
+    var weighted = length == 0 ? 1 : length;
+    var width = 200 / weighted;
+    var canvas = w.get(0);
+    var ctx = canvas.getContext('2d');
+    ctx.strokeStyle = '#00ff00';
+    ctx.beginPath();
+    for (w in weights)
+    {
+      var wt = parseFloat(weights[w].size);
+      switch (parseInt(w)) {
+        case 0:
+          ctx.moveTo(0, parseFloat(max.size)-wt);
+          break;
+        default:
+          ctx.lineTo(weights[w].day * width, parseFloat(max.size)-wt);
+      }
+      if (weights.length == 1)
+      {
+        ctx.lineTo(200, parseFloat(max.size)-wt);
+      }
+    }
+    ctx.stroke();
+  }
+
+  initializer();
+
+}]);

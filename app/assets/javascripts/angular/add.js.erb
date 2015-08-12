@@ -1,0 +1,273 @@
+app.controller("add", ['$sce', '$scope', '$timeout', 'SubmitPost', function ($sce, $scope, $timeout, SubmitPost) {
+  var s = $scope;
+  s.date = '';
+  s.content = '';
+  s.size = '';
+
+  s.onTimeout = function(){
+    var d = new Date();
+    d.setHours(d.getHours() - 2);
+    s.date = '' + f(d.getMonth() + 1) + '/' + f(d.getDate()) + '/' + d.getFullYear() + ' ';
+    var am = d.getHours() > 11 ? 'pm' : 'am';
+    var beforeHours = d.getHours() - (d.getHours() > 12 ? 12 : 0);
+    var hours = f(beforeHours == 0 ? 12 : beforeHours);
+    s.date += hours + ':' + f(d.getMinutes()) + am;
+    $timeout(s.onTimeout,1000);
+  };
+
+  s.getFile = function(type) {
+    var file = $('#editFile');
+    file.attr('class', 'hidden');
+    file.addClass(type);
+    file.click();
+  };
+
+  s.setLink = function(e) {
+    s.stylize(false, e, 2);
+    s.stylize(false, e, 4);
+    s.stylize(false, e, 5);
+  };
+
+  s.switchBack = function() {
+    window.location.href = 'root';
+  };
+
+  s.focuser = function() {
+    $('#html').get(0).focus();
+  };
+
+  s.stylize = function(p, e, z) {
+    var html = $('#html');
+    var undo = true;
+    var highlights = [];
+    var next = $(e.target).next().val();
+    var prev = $(e.target).prev().val();
+    var styles = ['font-weight', 'font-style', 'text-decoration', 'font-size',
+      'color', 'cursor'];
+    var values = ['600', 'italic', 'underline', next + 'px', 'white', 'pointer'];
+    var range = window.getSelection().getRangeAt(0);
+    var node = range.startContainer;
+    if ($.contains(html.get(0),node))
+    {
+      while (node.parentNode.id.length < 1) {
+        node = node.parentNode;
+      }
+      var nodes = node.parentNode.childNodes;
+
+      var thisHTML = '';
+      var k = 0;
+      while (nodes[k] != node) {
+        thisHTML += nodes[k].outerHTML || '<span>' + $(nodes[k]).text() + '</span>';
+        k++;
+      }
+      var jNodeCopy = $(node.outerHTML || '<span>' + $(node).text() + '</span>');
+      var jNodeText = jNodeCopy.text().substring(0, range.startOffset);
+      jNodeCopy.html(jNodeText);
+      thisHTML += jNodeCopy.get(0).outerHTML;
+      k++;
+
+      var start = range.startOffset;
+      var b = $(node).text().length - start;
+      var selectSpan = range.toString().length;
+      while (b < selectSpan) {
+        jNodeCopy = $(node.outerHTML || '<span>' + $(node).text() + '</span>');
+        jNodeText = jNodeCopy.text().substring(start, start + b);
+        jNodeCopy.html(jNodeText);
+        if (p) {
+          undo = false;
+          jNodeCopy.css(styles[z], '');
+          if (z == 5) {
+            jNodeCopy.removeAttr('onclick');
+            jNodeCopy.css('color', '');
+            jNodeCopy.css('cursor', '');
+          }
+        }
+        else {
+          if (jNodeCopy.css(styles[z]) != values[z]) {
+            undo = false;
+          }
+          jNodeCopy.css(styles[z], values[z]);
+          if (z == 4) {
+            jNodeCopy.attr('onclick', "window.location.href='" + prev + "'");
+          }
+        }
+        thisHTML += jNodeCopy.get(0).outerHTML;
+        selectSpan -= b;
+        node = node.nextSibling;
+        b = $(node).text().length;
+        start = 0;
+        highlights.push(k);
+        k++;
+      }
+      if (b == selectSpan) {
+        jNodeCopy = $(node.outerHTML || '<span>' + $(node).text() + '</span>');
+        jNodeText = jNodeCopy.text().substring(start);
+        jNodeCopy.html(jNodeText);
+        if (p) {
+          undo = false;
+          jNodeCopy.css(styles[z], '');
+          if (z == 5) {
+            jNodeCopy.removeAttr('onclick');
+            jNodeCopy.css('color', '');
+            jNodeCopy.css('cursor', '');
+          }
+        }
+        else {
+          if (jNodeCopy.css(styles[z]) != values[z]) {
+            undo = false;
+          }
+          jNodeCopy.css(styles[z], values[z]);
+          if (z == 4) {
+            jNodeCopy.attr('onclick', "window.location.href='" + prev + "'");
+          }
+        }
+        thisHTML += jNodeCopy.get(0).outerHTML;
+        highlights.push(k);
+        k++;
+      }
+      if (b > selectSpan) {
+        jNodeCopy = $(node.outerHTML || '<span>' + $(node).text() + '</span>');
+        jNodeText = jNodeCopy.text().substring(start, start + selectSpan);
+        jNodeCopy.html(jNodeText);
+        if (p) {
+          undo = false;
+          jNodeCopy.css(styles[z], '');
+          if (z == 5) {
+            jNodeCopy.removeAttr('onclick');
+            jNodeCopy.css('color', '');
+            jNodeCopy.css('cursor', '');
+          }
+        }
+        else {
+          if (jNodeCopy.css(styles[z]) != values[z]) {
+            undo = false;
+          }
+          jNodeCopy.css(styles[z], values[z]);
+          if (z == 4) {
+            jNodeCopy.attr('onclick', "window.location.href='" + prev + "'");
+          }
+        }
+        thisHTML += jNodeCopy.get(0).outerHTML;
+        highlights.push(k);
+
+        jNodeCopy = $(node.outerHTML || '<span>' + $(node).text() + '</span>');
+        jNodeText = jNodeCopy.text().substring(start + selectSpan);
+        jNodeCopy.html(jNodeText);
+        thisHTML += jNodeCopy.get(0).outerHTML;
+      }
+      while (node.nextSibling) {
+        node = node.nextSibling;
+        thisHTML += node.outerHTML || '<span>' + $(node).text() + '</span>';
+      }
+
+      if (undo) {
+        s.stylize(true, e, z)
+      }
+      else {
+        html.html(thisHTML);
+        var c = html.children();
+        if ($(c.get(c.length - 1)).text().length > 0) {
+          html.append('<span></span>');
+          c = html.children();
+        }
+        var l = window.getSelection();
+        var r = document.createRange();
+        r.setStart(c.get(highlights[0]), 0);
+        var last = c.get(highlights[highlights.length - 1] + 1);
+        r.setEnd(last, 0);
+        l.removeAllRanges();
+        l.addRange(r);
+      }
+    }
+  };
+
+  s.submit = function() {
+    SubmitPost.get({size: s.size, content: $('#html').html(), date: s.date}, function(resp){
+
+    });
+  };
+
+  // private functions
+
+  function f(number) {
+    if (number < 10)
+      number = '0' + number;
+    return number;
+  }
+
+  function setBottom() {
+    var width = $(window).width();
+    var height = $(window).height();
+    var blog = $('#blog');
+    var offset = height - blog.offset().top - 50;
+    blog.css('height',offset + 'px');
+    var left = width - 20;
+    var top = height - 20;
+    var cc = $('#corner-click');
+    cc.css('height', 20);
+    cc.css('width', 20);
+    cc.css('top', top);
+    cc.css('left', left);
+  }
+
+  function initializer() {
+    s.onTimeout();
+    $('.noselect').attr('unselectable', 'on');
+    setBottom();
+    $('#html').get(0).focus();
+    $(window).resize(function(){
+      setBottom();
+    });
+  }
+
+  $(function () {
+    $('#editFile').each(function () {
+      var fileInput = $(this);
+      var submitButton = $('#send');
+      var denverOmlet = JSON.parse($('#s3_direct_post').val());
+      fileInput.fileupload({
+        fileInput: fileInput,
+        url: $('#post_url').val(),
+        type: 'POST',
+        autoUpload: true,
+        formData: {
+          key: denverOmlet['key'],
+          AWSAccessKeyId: denverOmlet['AWSAccessKeyId'],
+          acl: denverOmlet['acl'],
+          policy: $('#policy').val(),
+          signature: $('#siggy').val(),
+          success_action_status: denverOmlet['success_action_status']
+        },
+        paramName: 'file', // S3 does not like nested name fields i.e. name="user[avatar_url]"
+        dataType: 'XML',  // S3 returns XML if success_action_status is set to 201
+        replaceFileInput: false,
+        progressall: function (e, data) {
+          var progress = parseInt(data.loaded / data.total * 100, 10);
+        },
+        start: function (e) {
+          submitButton.prop('disabled', true);
+        },
+        done: function (e, data) {
+          submitButton.prop('disabled', false);
+          var html = $('#html');
+          var key = $(data.jqXHR.responseXML).find("Key").text();
+          var url = 'https://s3-us-west-2.amazonaws.com/assets-japanfour/' + key;
+          if (fileInput.is('.pic'))
+          {
+            html.append('<object data="' + url + '" type="image/png"></object>');
+          }
+          else
+          {
+            html.append('<audio controls><source src="' + url + '" type="audio/mpeg"></audio>');
+          }
+        },
+        fail: function () {
+          submitButton.prop('disabled', false);
+        }
+      });
+    });
+  });
+
+  initializer();
+
+}]);

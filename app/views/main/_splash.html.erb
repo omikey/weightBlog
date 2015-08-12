@@ -1,0 +1,53 @@
+<div ng-controller="main" id="main">
+  <span id="title">
+    mikey's blog
+  </span>
+  <div id="content">
+    always fascinating
+      <div id="blog">
+        <div id="center">
+          <span ng-click="changeDay(-1)" class="noselect"><< </span>
+          <span ng-bind="date" class="noselect">
+          </span>
+          <span ng-click="changeDay(1)" class="noselect"> >></span>
+          <br />
+          <canvas width="200" height="300" id="weight"></canvas>
+          <br />
+        </div>
+        <div id="left">
+          <span ng-bind-html="content">
+          </span>
+        </div>
+      </div>
+  </div>
+  <div id="corner-click" ng-click="signin()"></div>
+  <div id="backmesh"></div>
+  <div id="overalls" ng-click="signin()" class="hidden"></div>
+  <div id="popup" class="hidden" style="background-color: rgba(0,0,0,.8); color: white;">
+    <form>
+      <table>
+        <tr>
+          <td colspan="2">
+            sign in
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <label for="user">user: </label>
+          </td>
+          <td>
+            <input type="text" ng-model="user" id="user" name="user" />
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <label for="pass">pass: </label>
+          </td>
+          <td>
+            <input type="password" ng-model="pass" id="pass" name="pass" />
+          </td>
+        </tr>
+      </table>
+    </form>
+  </div>
+</div>
